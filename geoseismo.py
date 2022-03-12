@@ -2,6 +2,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 import skimage.io as sio
+import math
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 #Cilindros extracted from https://community.plotly.com/t/basic-3d-cylinders/27990/3
 def cylinder(r, h,x0,y0,a =0, nt=600, nv=50):
@@ -102,50 +105,47 @@ def profile_plane(x0,y0,x1,y1):
     xx=np.concatenate(x_data).reshape(yy.shape)
     ima_surface=go.Surface(x=xx, y=yy, z=zz, colorscale=['red','red'], showscale=False,opacity=0.5,name='Perfil')
     return ima_surface
+
+
+def rotate(origin, point, angle):
+    """
+    Rotate a point counterclockwise by a given angle around a given origin.
+
+    The angle should be given in radians.
+    """
+    ox, oy = origin
+    px, py = point
+
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    return qx, qy
 #Funcion para perfiles sismicos
-def profile(x0,x1,y0,y1,df_sismos_1):
-    x=[x0,x1]
-    y=[y0,y1]
-    if x0==x1:
+def profile(x1,x2,y1,y2,df_sismos_1):
+    x=[x1,x2]
+    y=[y1,y2]
+    if x1==x2:
         slope, intercept = np.polyfit(y,x,1)
-        dist=np.sqrt(((x1-x0)**2)+(y1-y0)**2)
-        y_lin=np.linspace(y0,y1,int(dist*50))
-        x_lin=(slope*y_lin)+intercept
+        dist=np.sqrt(((x2-x1)**2)+(y2-y1)**2)
     else:
         slope, intercept = np.polyfit(x,y,1)
-        dist=np.sqrt(((x1-x0)**2)+(y1-y0)**2)
-        x_lin=np.linspace(x0,x1,int(dist*50))
-        y_lin=(slope*x_lin)+intercept
-
-    gr=0.1
-    x_min=x_lin-gr
-    x_max=x_lin+gr
-    y_min=y_lin-gr
-    y_max=y_lin+gr
-    ls=[]
-    init=0
-    for xm,xs,ym,ys,xp,yp in zip(x_min,x_max,y_min,y_max,x_lin,y_lin):
-    #     print(xm,xs,ym,ys)
-        if init==0:
-            df_sismos=df_sismos_1[ #Filtros previos
-                (df_sismos_1['LATITUD (°)']>ym+0.1)&(df_sismos_1['LATITUD (°)']<ys)
-                &(df_sismos_1['LONGITUD (°)']>xm+0.1)&(df_sismos_1['LONGITUD (°)']<xs)]
-            init=1
-        elif init==len(x_min):
-            df_sismos=df_sismos_1[ #Filtros previos
-                (df_sismos_1['LATITUD (°)']>ym)&(df_sismos_1['LATITUD (°)']<ys-0.1)
-                &(df_sismos_1['LONGITUD (°)']>xm)&(df_sismos_1['LONGITUD (°)']<xs-0.1)]
-        else:
-            df_sismos=df_sismos_1[ #Filtros previos
-                    (df_sismos_1['LATITUD (°)']>ym)&(df_sismos_1['LATITUD (°)']<ys)
-                    &(df_sismos_1['LONGITUD (°)']>xm)&(df_sismos_1['LONGITUD (°)']<xs)]
-            init=init+1
-        df_sismos['DIST_1']=np.sqrt(((xp-df_sismos['LONGITUD (°)'])**2)+((yp-df_sismos['LATITUD (°)'])**2))
-        df_sismos=df_sismos[df_sismos['DIST_1']<=0.1]
-        ls.append(df_sismos)
-    df_profile=pd.concat(ls).drop_duplicates()
-    df_profile['DIST']=np.sqrt(((x0-df_profile['LONGITUD (°)'])**2)+((y0-df_profile['LATITUD (°)'])**2))
-    df_profile=df_profile[df_profile['DIST']<=dist]
+        dist=np.sqrt(((x2-x1)**2)+(y2-y1)**2)
+    dx,dy=(x1-x2,y1-y2)
+    try:
+        rot=np.arctan(dx/dy)
+    except:
+        rot=0
+    o1,o2=((x1,y1),(x2,y2))
+    p1_s=rotate(o1, (x1+0.1,y1), -rot)
+    p1_i=rotate(o1, (x1-0.1,y1), -rot)
+    p2_s=rotate(o2, (x2+0.1,y2), -rot)
+    p2_i=rotate(o2, (x2-0.1,y2), -rot)
+    polygon = Polygon([p1_s, p1_i, p2_i, p2_s])
+    id_ls=[]
+    for x,y,id in zip(df_sismos_1[ 'LONGITUD (°)'],df_sismos_1[ 'LATITUD (°)'],df_sismos_1['Unnamed: 0']):
+        if polygon.contains(Point(x,y)):
+            id_ls.append(id)
+    df_profile=df_sismos_1[np.isin(df_sismos_1['Unnamed: 0'], id_ls)]
+    df_profile['DIST']=np.sqrt(((x1-df_profile['LONGITUD (°)'])**2)+((y1-df_profile['LATITUD (°)'])**2)) 
     return df_profile,dist
 #Funcion para perfiles topograficos
 def topo_profile(x0,x1,y0,y1,df_topo):

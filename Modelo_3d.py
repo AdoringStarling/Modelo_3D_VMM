@@ -322,7 +322,7 @@ SISMICA=img_3d("assets/perfil_2.jpg",-74.115,7.58,-72.954,6.806,4300,-20000)
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SUPERHERO])
-
+app.config['suppress_callback_exceptions'] = True
 #Cargars los datos
 
 card_main=dbc.Card(
@@ -514,8 +514,7 @@ app.layout = html.Div([
 
 
 @app.callback(
-     [dash.dependencies.Output(component_id='3d_model', component_property='figure'),
-     dash.dependencies.Output(component_id='Model_profile', component_property='figure')],
+     dash.dependencies.Output(component_id='3d_model', component_property='figure'),
 
 
 
@@ -534,7 +533,7 @@ app.layout = html.Div([
      dash.dependencies.Input(component_id='Latitud 1', component_property='value'),
      dash.dependencies.Input(component_id='Latitud 2', component_property='value') ])
 
-def update_output(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL,x0,x1,y0,y1):
+def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL,x0,x1,y0,y1):
         fig=go.Figure()
         if np.isin('GEO', GEOL):
             if TOPO==0:
@@ -691,120 +690,141 @@ def update_output(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 yaxis = dict(title='Latitud(°)',nticks=10, range=[lai,las],),
                 zaxis = dict(title='Elevación(msnm)',nticks=10, range=[-15000,10000],),),)
         fig.update_traces(showlegend=False)
-        #Perfil sismico'----------------------------------------------------------------------------------------------------------------
-        fig2= go.Figure()
-        df_profile,dist_max=profile(x0,x1,y0,y1,df_sismos_1)
-        text1=text_scatter(SEISMO,df_profile)
-        profiles=go.Scatter(x=df_profile['DIST'],
-                                    y=df_profile['PROF. (m)'],
-                                    mode='markers',
-                                    name='Sismos',
-                                    error_y=dict(
-                                        array=df_profile['ERROR PROFUNDIDAD SUP (m)'],                # set color to an array/list of desired values
-                                        color='red',   # choose a colorscale
-                                        symmetric=True,
-                                        thickness=0.01,
-                                        arrayminus=df_profile['ERROR PROFUNDIDAD (m)']
-                                    ),
-                                    marker=dict(size=df_profile['MAGNITUD']*5,
-                                                color=df_profile['PROF. (m)'],
-                                                colorscale='Jet',   # choose a colorscale
-                                                opacity=0.8,
-                                                cmax=100,
-                                                cmin=-15000,),
-                                                hovertemplate=text1)
-        seismic_scale=go.Scatter(x=[dist_max/25,dist_max*1.2/25,dist_max*1.5/25,dist_max*2/25,dist_max*2.6/25],
-                                    y=[8000]*5,
-                                    mode='markers',
-                                    name='Magnitudes',
-                                    showlegend=False,
-                                    marker=dict(size=(np.array([1,2,3,4,5])*5),
-                                                opacity=0.8,
-                                                ))
-        for x_t,t_t in zip([dist_max/25,dist_max*1.2/25,dist_max*1.5/25,dist_max*2/25,dist_max*2.6/25],['1','2','3','4','5']):
-            fig2.add_annotation(x=x_t, y=12200,
-                text=t_t,
-                showarrow=False,
-                yshift=0,
-                
-            font=dict(
-                family="Courier New, monospace",
-                size=12,
-                
-                )),
-        fig2.add_trace(seismic_scale)  
-        if dist_max>=2:
-            scale_num=15;scale_text='15';scale_size=12
-        elif dist_max<2 and dist_max>=1:
-            scale_num=10;scale_text='10';scale_size=12
-        else :
-            scale_num=5;scale_text='5';scale_size=12
-        fig2.add_annotation(x=(scale_num/111.1)/2, y=-24000,
-                    text=scale_text+'km',
-                    showarrow=False,
-                    yshift=0,
-                font=dict(
-                    family="Courier New, monospace",
-                    size=scale_size,
-                    
-                    ))
-        fig2.add_trace(go.Scatter(x=np.linspace(0, scale_num/111.1, 4), y=np.array([-25000]*4),
-                    mode='lines',
-                    name=scale_text+'km',
-                    showlegend=False,
-                    marker=dict(color='black', size=8)))
-        fig2.add_trace(go.Scatter(x=np.linspace(scale_num/111.1, scale_num*2/111.1, 4), y=np.array([-25000]*4),
-                    mode='lines',
-                    name=scale_text+'km',
-                    showlegend=False,
-                    marker=dict(color='white', size=8)))
-        fig2.add_trace(go.Scatter(x=np.linspace(scale_num*2/111.1, scale_num*3/111.1, 4), y=np.array([-25000]*4),
-                    mode='lines',
-                    name=scale_text+'km',
-                    showlegend=False,
-                    marker=dict(color='black', size=8)))
-        fig2.add_trace(go.Scatter(x=np.linspace(scale_num*3/111.1, scale_num*4/111.1, 4), y=np.array([-25000]*4),
-                    mode='lines',
-                    name=scale_text+'km',
-                    showlegend=False,
-                    marker=dict(color='white', size=8)))
-        fig2.add_trace(go.Scatter(x=np.linspace(scale_num*4/111.1, scale_num*5/111.1, 4), y=np.array([-25000]*4),
-                    mode='lines',
-                    name=scale_text+'km',
-                    showlegend=False,
-                    marker=dict(color='black', size=8)))
-        fig2.add_trace(profiles)      
-        t_profile=topo_profile(x0,x1,y0,y1,df_topo)
-        fig2.add_trace(t_profile)  
-        Eoceno_1=geologic_profile(x0,y0,x1,y1,'datasets/DISCORDANCIA_EOCENO.txt','Discordancia del Eoceno Medio','red')
-        Real_1=geologic_profile(x0,y0,x1,y1,'datasets/BASE_CUATERNARIO.txt','Tope Grupo Real','purple')
-        Chorros_1=geologic_profile(x0,y0,x1,y1,'datasets/TOPE_CHORROS.txt','Tope Grupo Chorros','orangered')
-        Colorado_1=geologic_profile(x0,y0,x1,y1,'datasets/TOPE_COLORADO.txt','Tope Formación Colorado','darkblue')
-        Mugrosa_1=geologic_profile(x0,y0,x1,y1,'datasets/TOPE_MUGROSA.txt','Tope Formación Mugrosa','green')
-        p1,p2=orientation(x0,y0,x1,y1)
-        fig2.add_annotation(x=0, y=10000,
-            text=p1,
+        return fig
+
+@app.callback(
+     dash.dependencies.Output(component_id='Model_profile', component_property='figure'),
+
+
+
+    [dash.dependencies.Input(component_id='DATE', component_property='start_date'),
+     dash.dependencies.Input(component_id='DATE', component_property='end_date'),
+     dash.dependencies.Input(component_id='MAGN', component_property='value'),
+     dash.dependencies.Input(component_id='DEPTH', component_property='value'),
+     dash.dependencies.Input(component_id='SEISMO', component_property='value'),
+     dash.dependencies.Input(component_id='Longitud 1', component_property='value'),
+     dash.dependencies.Input(component_id='Longitud 2', component_property='value'),
+     dash.dependencies.Input(component_id='Latitud 1', component_property='value'),
+     dash.dependencies.Input(component_id='Latitud 2', component_property='value') ])
+
+def update_profile(START_DATE,END_DATE,MAGN,DEPTH,SEISMO,x0,x1,y0,y1):
+    #Perfil sismico'----------------------------------------------------------------------------------------------------------------
+    df_sismos_1=df_sismos[(df_sismos['FECHA - HORA UTC']<=END_DATE)&(df_sismos['FECHA - HORA UTC']>=START_DATE)&
+    (df_sismos['MAGNITUD']>=MAGN[0])&(df_sismos['MAGNITUD']<=MAGN[1])
+    &(df_sismos['PROF. (m)']>=DEPTH[0])&(df_sismos['PROF. (m)']<=DEPTH[1])]
+    fig2= go.Figure()
+    df_profile,dist_max=profile(x0,x1,y0,y1,df_sismos_1)
+    text1=text_scatter(SEISMO,df_profile)
+    profiles=go.Scatter(x=df_profile['DIST'],
+                                y=df_profile['PROF. (m)'],
+                                mode='markers',
+                                name='Sismos',
+                                error_y=dict(
+                                    array=df_profile['ERROR PROFUNDIDAD SUP (m)'],                # set color to an array/list of desired values
+                                    color='red',   # choose a colorscale
+                                    symmetric=True,
+                                    thickness=0.01,
+                                    arrayminus=df_profile['ERROR PROFUNDIDAD (m)']
+                                ),
+                                marker=dict(size=df_profile['MAGNITUD']*5,
+                                            color=df_profile['PROF. (m)'],
+                                            colorscale='Jet',   # choose a colorscale
+                                            opacity=0.8,
+                                            cmax=100,
+                                            cmin=-15000,),
+                                            hovertemplate=text1)
+    seismic_scale=go.Scatter(x=[dist_max/25,dist_max*1.2/25,dist_max*1.5/25,dist_max*2/25,dist_max*2.6/25],
+                                y=[8000]*5,
+                                mode='markers',
+                                name='Magnitudes',
+                                showlegend=False,
+                                marker=dict(size=(np.array([1,2,3,4,5])*5),
+                                            opacity=0.8,
+                                            ))
+    for x_t,t_t in zip([dist_max/25,dist_max*1.2/25,dist_max*1.5/25,dist_max*2/25,dist_max*2.6/25],['1','2','3','4','5']):
+        fig2.add_annotation(x=x_t, y=12200,
+            text=t_t,
             showarrow=False,
             yshift=0,
+            
         font=dict(
             family="Courier New, monospace",
-            size=25,
-            ))
-        fig2.add_annotation(x=dist_max, y=10000,
-            text=p2,
-            showarrow=False,
+            size=12,
+            
+            )),
+    fig2.add_trace(seismic_scale)  
+    if dist_max>=2:
+        scale_num=15;scale_text='15';scale_size=12
+    elif dist_max<2 and dist_max>=1:
+        scale_num=10;scale_text='10';scale_size=12
+    else :
+        scale_num=5;scale_text='5';scale_size=12
+    fig2.add_annotation(x=(scale_num/111.1)/2, y=-24000,
+                text=scale_text+'km',
+                showarrow=False,
+                yshift=0,
             font=dict(
-            family="Courier New, monospace",
-            size=25,
+                family="Courier New, monospace",
+                size=scale_size,
+                
+                ))
+    fig2.add_trace(go.Scatter(x=np.linspace(0, scale_num/111.1, 4), y=np.array([-25000]*4),
+                mode='lines',
+                name=scale_text+'km',
+                showlegend=False,
+                marker=dict(color='black', size=8)))
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num/111.1, scale_num*2/111.1, 4), y=np.array([-25000]*4),
+                mode='lines',
+                name=scale_text+'km',
+                showlegend=False,
+                marker=dict(color='white', size=8)))
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*2/111.1, scale_num*3/111.1, 4), y=np.array([-25000]*4),
+                mode='lines',
+                name=scale_text+'km',
+                showlegend=False,
+                marker=dict(color='black', size=8)))
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*3/111.1, scale_num*4/111.1, 4), y=np.array([-25000]*4),
+                mode='lines',
+                name=scale_text+'km',
+                showlegend=False,
+                marker=dict(color='white', size=8)))
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*4/111.1, scale_num*5/111.1, 4), y=np.array([-25000]*4),
+                mode='lines',
+                name=scale_text+'km',
+                showlegend=False,
+                marker=dict(color='black', size=8)))
+    fig2.add_trace(profiles)      
+    t_profile=topo_profile(x0,x1,y0,y1,df_topo)
+    fig2.add_trace(t_profile)  
+    Eoceno_1=geologic_profile(x0,y0,x1,y1,'datasets/DISCORDANCIA_EOCENO.txt','Discordancia del Eoceno Medio','red')
+    Real_1=geologic_profile(x0,y0,x1,y1,'datasets/BASE_CUATERNARIO.txt','Tope Grupo Real','purple')
+    Chorros_1=geologic_profile(x0,y0,x1,y1,'datasets/TOPE_CHORROS.txt','Tope Grupo Chorros','orangered')
+    Colorado_1=geologic_profile(x0,y0,x1,y1,'datasets/TOPE_COLORADO.txt','Tope Formación Colorado','darkblue')
+    Mugrosa_1=geologic_profile(x0,y0,x1,y1,'datasets/TOPE_MUGROSA.txt','Tope Formación Mugrosa','green')
+    p1,p2=orientation(x0,y0,x1,y1)
+    fig2.add_annotation(x=0, y=10000,
+        text=p1,
+        showarrow=False,
+        yshift=0,
+    font=dict(
+        family="Courier New, monospace",
+        size=25,
+        ))
+    fig2.add_annotation(x=dist_max, y=10000,
+        text=p2,
+        showarrow=False,
+        font=dict(
+        family="Courier New, monospace",
+        size=25,
+        ),
+        yshift=0)
+    fig2.add_traces(data=[Eoceno_1,Real_1,Chorros_1,Colorado_1,Mugrosa_1]) 
+    fig2.update_layout(
+                title="Perfil",
             ),
-            yshift=0)
-        fig2.add_traces(data=[Eoceno_1,Real_1,Chorros_1,Colorado_1,Mugrosa_1]) 
-        fig2.update_layout(
-                    title="Perfil",
-                ),
-        fig2.update_layout(xaxis_title="Distancia (°)",
-                            yaxis_title="Profundidad (m)")
-        return fig,fig2
+    fig2.update_layout(xaxis_title="Distancia (°)",
+                        yaxis_title="Profundidad (m)")
+    return fig2
 
 if __name__ == "__main__":
     app.run_server(debug=True)
