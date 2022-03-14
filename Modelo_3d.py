@@ -604,7 +604,7 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
             for i in df_rivers['DRENAJE'].unique():
                 riv=df_rivers[df_rivers['DRENAJE']==i]
                 fig.add_trace(go.Scatter3d(z=riv['Z'], x=riv['X'], y=riv['Y'],mode='markers',
-                name=str(i),marker_symbol='square',marker=dict(color='blue',size=3)))
+                name=str(i),marker_symbol='square',marker=dict(color='aqua',size=3)))
         if np.isin('SEM', CART):
             fig.add_traces(data=[cyl1, bcircles1,cyl2, bcircles2])
         if np.isin('STA', CART):
