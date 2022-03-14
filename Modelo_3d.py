@@ -182,10 +182,9 @@ STA_LOM = go.Scatter3d(
     )
 )
 
-#Rio magdalena
-df_magdalena=pd.read_csv('datasets\RIO_MAGDALENA.txt',delimiter=';',decimal=',')
-magdalena=go.Scatter3d(z=df_magdalena['DEM_RÍO_MAGDALENA_Band_1'], x=df_magdalena['X'], y=df_magdalena['Y'],mode='markers',
-                    name='Rio',marker_symbol='square',marker=dict(color='blue',size=3))
+#Rios
+df_rivers=pd.read_csv('datasets\drenajes.csv')
+
 #Cargar datos de pozos
 df_pozos=pd.read_csv('datasets/pozos.csv',usecols=['lon', 'lat', 'UWI', 'WELL_NAME', 
 'DEPARTAMEN', 'WELL_COU_1', 'WELL_TVD', 'WELL_KB_EL',
@@ -420,7 +419,7 @@ card_main=dbc.Card(
                             {'label': ' Barras de Error (SGC)', 'value': 'ERROR'},
                             {'label': ' Estaciones sismológicas (SGC)', 'value': 'STA'},
                             {'label': ' Poblaciones (UNAL-ANH-MINCIENCIAS)', 'value': 'POB'},
-                            {'label': ' Rio Magdalena', 'value': 'MAG'},
+                            {'label': ' Drenajes', 'value': 'RIV'},
                             {'label': ' Vias', 'value': 'VIA'},
                             {'label': ' Perfil', 'value': 'PER'},
                             
@@ -601,8 +600,11 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 showlegend=False))
         if np.isin('KALE', CART):
             fig.add_trace(kale)
-        if np.isin('MAG', CART):
-            fig.add_trace(magdalena)
+        if np.isin('RIV', CART):
+            for i in df_rivers['DRENAJE'].unique():
+                riv=df_rivers[df_rivers['DRENAJE']==i]
+                fig.add_trace(go.Scatter3d(z=riv['Z'], x=riv['X'], y=riv['Y'],mode='markers',
+                name=str(i),marker_symbol='square',marker=dict(color='blue',size=3)))
         if np.isin('SEM', CART):
             fig.add_traces(data=[cyl1, bcircles1,cyl2, bcircles2])
         if np.isin('STA', CART):
