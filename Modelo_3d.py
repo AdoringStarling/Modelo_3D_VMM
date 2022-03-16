@@ -419,8 +419,8 @@ card_main=dbc.Card(
                             {'label': ' Barras de Error (SGC)', 'value': 'ERROR'},
                             {'label': ' Estaciones sismológicas (SGC)', 'value': 'STA'},
                             {'label': ' Poblaciones (UNAL-ANH-MINCIENCIAS)', 'value': 'POB'},
-                            {'label': ' Drenajes', 'value': 'RIV'},
-                            {'label': ' Vias', 'value': 'VIA'},
+                            {'label': ' Drenajes (IGAC)', 'value': 'RIV'},
+                            {'label': ' Vias (IGAC)', 'value': 'VIA'},
                             {'label': ' Perfil', 'value': 'PER'},
                             
                         ],
@@ -437,7 +437,7 @@ card_main=dbc.Card(
                             {'label': ' Campos petrolíferos (UNAL-ANH-MINCIENCIAS)', 'value': 'FIELD'},
                             {'label': ' Trazo en superficie de líneas sísmicas (UNAL-ANH-MINCIENCIAS)', 'value': 'LIN'},
                             {'label': ' Rezumaderos (ANH)', 'value': 'REZ'},
-                            {'label': ' Imagen sismica de ejemplo', 'value': 'SEIS'}
+                            {'label': ' ANH-TR-2006-04-A (ANH)', 'value': 'SEIS'}
 
                             
                         ],
@@ -488,11 +488,17 @@ card_graph_profile = dbc.Card(
 card_references=dbc.Card(
     dbc.CardBody([
         html.H2("Referencias", className="card-title"),
+        html.H6("Agencia Nacional de Hidrocarburos - ANH & Servicio Geológico Colombiano - SGC (2016). Informe final del Convenio interadministrativo 194 ANH-014 SGC, entre la Agencia Nacional de Hidrocarburos y el Servicio Geológico Colombiano.", 
+            className="card-text"),
+        html.H6("Agencia Nacional de Hidrocarburos - ANH (2010). Mapa de Rezumaderos. Información Geológica y Geofísica. https://www.anh.gov.co/Informacion-Geologica-y-Geofisica/Estudios-Integrados-y-Modelamientos/Paginas/MAPA-DE-REZUMADEROS.aspx", 
+            className="card-text"),         
         html.H6("Ángel-Martínez, C.E., Prieto-Gómez, G.A., Cristancho-Mejía, F., Sarmiento-Orjuela, A.M., Vargas-Quintero, J.A., Delgado-Mateus, C.J., Torres-Rojas, E., Castelblanco-Ossa, C.A., Camargo-Rache, G.L., Amazo-Gómez, D.F., Cipagauta-Mora, J.B., Lucuara-Reyes, E.D., Ávila-López, K.L. Fracica-González, L.R., Martín-Ravelo, A.S., Atuesta-Ortiz, D.A., Gracía-Romero, D.F., Triviño Cediel , R.J., Jaimes Villarreal, V.N., y Alarcón Rodríguez, W.F.(2021). Proyecto MEGIA: Modelo Geológico-Geofísico del Valle Medio del Magdalena. Producto No. 5. Bogotá: 192 pp.", 
             className="card-text"),
         html.H6("Dionicio, V., Mercado, O. y Lizarazo, M. (2020). Semáforo para el monitoreo sísmico durante el desarrollo de los proyectos piloto de investigación integral en yacimientos no convencionales de hidrocarburos en Colombia. Bogotá: Servicio Geológico Colombiano.", 
             className="card-text"),
         html.H6("Gómez, J. & Montes, N.E., compiladores. 2020. Mapa Geológico de Colombia 2020. Escala 1:1 000 000. Servicio Geológico Colombiano, 2 hojas. Bogotá.​", 
+            className="card-text"),
+        html.H6("Instituto Geográfico Agustin Codazzi - IGAC (2019). Base de datos vectorial básica. Colombia. Escala 1:100.000. Colombia en Mapas. https://www.colombiaenmapas.gov.co/#", 
             className="card-text"),
         html.H6("Servicio Geológico Colombiano. (2021). Banco de Información Petrolera. https://srvags.sgc.gov.co/JSViewer/GEOVISOR_BIP/", 
             className="card-text"),
@@ -513,7 +519,8 @@ app.layout = html.Div([
 
 
 @app.callback(
-     dash.dependencies.Output(component_id='3d_model', component_property='figure'),
+     [dash.dependencies.Output(component_id='3d_model', component_property='figure'),
+      dash.dependencies.Output(component_id='DATE', component_property='initial_visible_month')],
 
 
 
@@ -692,7 +699,7 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 yaxis = dict(title='Latitud(°)',nticks=10, range=[lai,las],),
                 zaxis = dict(title='Elevación(msnm)',nticks=10, range=[-15000,10000],),),)
         fig.update_traces(showlegend=False)
-        return fig
+        return fig,START_DATE
 
 @app.callback(
      dash.dependencies.Output(component_id='Model_profile', component_property='figure'),
@@ -725,7 +732,7 @@ def update_profile(START_DATE,END_DATE,MAGN,DEPTH,SEISMO,x0,x1,y0,y1):
                                     array=df_profile['ERROR PROFUNDIDAD SUP (m)'],                # set color to an array/list of desired values
                                     color='red',   # choose a colorscale
                                     symmetric=True,
-                                    thickness=0.01,
+                                    thickness=0.1,
                                     arrayminus=df_profile['ERROR PROFUNDIDAD (m)']
                                 ),
                                 marker=dict(size=df_profile['MAGNITUD']*5,
