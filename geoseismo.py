@@ -266,18 +266,12 @@ def text_scatter(SEISMO,df_sismos_1):
         if np.isin('FEC', SEISMO):
             ls_txt.append('Magnitud:'+df_sismos_1['MAGNITUD'].apply(lambda x:str(x))+'<br>'+
             'Tipo de magnitud:'+df_sismos_1['TIPO MAGNITUD']+'<br>')
-        if np.isin('FAS', SEISMO):
-            ls_txt.append('Fases:'+df_sismos_1['FASES'].apply(lambda x:str(x))+'<br>')
         if np.isin('RMS', SEISMO):
             ls_txt.append('RMS (Segundos):'+df_sismos_1['RMS (Seg)'].apply(lambda x:str(x))+'s <br>')
         if np.isin('ERR', SEISMO):
             ls_txt.append('Error en la latitud (m):'+df_sismos_1['ERROR LATITUD (Km)'].apply(lambda x:str(x*1000))+'m <br>'+
             'Error en la longitud (m):'+df_sismos_1['ERROR LONGITUD (Km)'].apply(lambda x:str(x*1000))+'m <br>'+
             'Error en la profundidad (m):'+df_sismos_1['ERROR PROFUNDIDAD (Km)'].apply(lambda x:str(x*1000))+'m <br>')
-        if np.isin('REG', SEISMO):
-            ls_txt.append('Región:'+df_sismos_1['REGION']+'<br>')
-        if np.isin('EST', SEISMO):
-            ls_txt.append('Estado:'+df_sismos_1['ESTADO'])
         if len(ls_txt)==0:
             text=' '
         else:

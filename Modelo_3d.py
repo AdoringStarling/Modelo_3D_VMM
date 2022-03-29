@@ -21,7 +21,20 @@ mesh_topo = (df_topo.pivot(index=1, columns=0,values=2))
 z_topo,x_topo,y_topo=mesh_topo.values,mesh_topo.columns,mesh_topo.index
 
 #Base de datos de sismos convertidos a csv desde http://bdrsnc.sgc.gov.co/paginas1/catalogo/Consulta_Valle_Medio/valle_medio.php
-df_sismos=pd.read_csv("datasets/reporte_1.csv")#,delimiter=';',decimal=',')
+#df_sismos=pd.read_csv("datasets/reporte_1.csv")#,delimiter=';',decimal=',')
+df_sismos=pd.read_csv(r'datasets\reporte_LBG.csv')
+df_sismos['FECHA - HORA UTC']=df_sismos['Fecha  (UTC)'].astype(str)+' '+df_sismos['Hora  (UTC)'].astype(str)
+df_sismos.rename(columns = {'Latitud(°)':'LATITUD (°)', 
+                                'Longitud(°)':'LONGITUD (°)',
+                                'Profundidad(Km)':'PROF. (Km)',
+                                'Magnitud':'MAGNITUD',
+                                'Tipo Magnitud':'TIPO MAGNITUD',
+                                'Rms(Seg)':'RMS (Seg)',
+                                'Gap(°)':'GAP (°)',
+                                'Error  Latitud(Km)':'ERROR LATITUD (Km)',
+                                'Error  Longitud(Km)':'ERROR LONGITUD (Km)',
+                                'Error  Profundidad(Km)':'ERROR PROFUNDIDAD (Km)'}, inplace = True)
+df_sismos.drop(['Fecha  (UTC)','Hora  (UTC)'],axis=1,inplace=True)
 df_sismos=df_sismos[(df_sismos['PROF. (Km)']<=15)&(df_sismos['PROF. (Km)']>(z_topo.min()*(-1/1000)))&(df_sismos['MAGNITUD']>0)& #Filtros previos
         (df_sismos['LATITUD (°)']>lai)&(df_sismos['LATITUD (°)']<las)
         &(df_sismos['LONGITUD (°)']>loi)&(df_sismos['LONGITUD (°)']<los)]
@@ -60,15 +73,15 @@ df_kale=pd.read_csv('datasets/Kale.csv')
 df_kale['msnm']=[69]*3
 
 kale= go.Scatter3d(
-    x=df_kale['Longitud'],
-    y=df_kale['Latitud'],
-    z=df_kale['msnm']+20,
+    x=np.array(-73.85660000000),
+    y=np.array(7.36551000000),
+    z=np.array(69+100),
     mode='markers',
     marker_symbol='diamond',
     name="PPII Kalé",
-    hovertemplate ='Tipo:'+df_kale['Tipo'],
+    hovertemplate ='PPII Kalé Investigación',
     marker=dict(
-        size=6,
+        size=10,
         color='gold'
     )
 )
@@ -380,7 +393,8 @@ card_main=dbc.Card(
                     day_size=30,
                     min_date_allowed=df_sismos['FECHA - HORA UTC'].min(),
                     max_date_allowed=df_sismos['FECHA - HORA UTC'].max(),
-                    initial_visible_month=df_sismos['FECHA - HORA UTC'].min(),
+                    persistence=True,
+                    #initial_visible_month=df_sismos['FECHA - HORA UTC'].min(),
                     reopen_calendar_on_clear=False
                 ),
                 html.H4("Perfiles:", className="card-subtitle"),
@@ -398,14 +412,11 @@ card_main=dbc.Card(
                             {'label': 'Localización', 'value': 'LOC'},
                             {'label': 'Fecha', 'value': 'FEC'},
                             {'label': 'Magnitud', 'value': 'MAG'},
-                            {'label': 'Fases', 'value': 'FAS'},
                             {'label': 'RMS', 'value': 'RMS'},
                             {'label': 'Errores', 'value': 'ERR'},
-                            {'label': 'Región', 'value': 'REG'},
-                            {'label': 'Estado', 'value': 'EST'},
                             
                         ],
-                        value=['LOC', 'FEC','MAG','FAS','RMS','ERR','REG','EST'],
+                        value=['LOC', 'FEC','MAG','RMS','ERR'],
                         multi=True
                     ),
             html.H4("________________________________________", className="card-subtitle"),
@@ -721,6 +732,7 @@ def update_profile(START_DATE,END_DATE,MAGN,DEPTH,SEISMO,x0,x1,y0,y1):
     df_sismos_1=df_sismos[(df_sismos['FECHA - HORA UTC']<=END_DATE)&(df_sismos['FECHA - HORA UTC']>=START_DATE)&
     (df_sismos['MAGNITUD']>=MAGN[0])&(df_sismos['MAGNITUD']<=MAGN[1])
     &(df_sismos['PROF. (m)']>=DEPTH[0])&(df_sismos['PROF. (m)']<=DEPTH[1])]
+    df_sismos_1['Unnamed: 0']=[i for i in range(0,len(df_sismos_1))]
     fig2= go.Figure()
     df_profile,dist_max=profile(x0,x1,y0,y1,df_sismos_1)
     text1=text_scatter(SEISMO,df_profile)
