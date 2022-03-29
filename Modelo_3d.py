@@ -22,7 +22,7 @@ z_topo,x_topo,y_topo=mesh_topo.values,mesh_topo.columns,mesh_topo.index
 
 #Base de datos de sismos convertidos a csv desde http://bdrsnc.sgc.gov.co/paginas1/catalogo/Consulta_Valle_Medio/valle_medio.php
 #df_sismos=pd.read_csv("datasets/reporte_1.csv")#,delimiter=';',decimal=',')
-df_sismos=pd.read_csv(r'datasets\reporte_LBG.csv')
+df_sismos=pd.read_csv(r'datasets\reporte_LBG_2.csv')
 df_sismos['FECHA - HORA UTC']=df_sismos['Fecha  (UTC)'].astype(str)+' '+df_sismos['Hora  (UTC)'].astype(str)
 df_sismos.rename(columns = {'Latitud(°)':'LATITUD (°)', 
                                 'Longitud(°)':'LONGITUD (°)',
@@ -35,7 +35,7 @@ df_sismos.rename(columns = {'Latitud(°)':'LATITUD (°)',
                                 'Error  Longitud(Km)':'ERROR LONGITUD (Km)',
                                 'Error  Profundidad(Km)':'ERROR PROFUNDIDAD (Km)'}, inplace = True)
 df_sismos.drop(['Fecha  (UTC)','Hora  (UTC)'],axis=1,inplace=True)
-df_sismos=df_sismos[(df_sismos['PROF. (Km)']<=15)&(df_sismos['PROF. (Km)']>(z_topo.min()*(-1/1000)))&(df_sismos['MAGNITUD']>0)& #Filtros previos
+df_sismos=df_sismos[(df_sismos['PROF. (Km)']<=32)&(df_sismos['PROF. (Km)']>(z_topo.min()*(-1/1000)))&(df_sismos['MAGNITUD']>0)& #Filtros previos
         (df_sismos['LATITUD (°)']>lai)&(df_sismos['LATITUD (°)']<las)
         &(df_sismos['LONGITUD (°)']>loi)&(df_sismos['LONGITUD (°)']<los)]
 df_sismos['PROF. (m)']=-df_sismos['PROF. (Km)']*1000 #
@@ -95,21 +95,28 @@ r_ext = 2*h_pozo_inv_kale_m+20000 #m
 #Asignamos las dimensiones y ubicacion del cilindro interno y externo respectivamente
 r1 = 2*h_pozo_inv_kale_m /(111.1*1000) #Radio interno es dos veces la profundidad medida del pozo. De acuerdo con Resolución 40185 del 2020 del MME. Profundidad aproximada en pozo de investigación es 3902 m
 a1 = 0 #Altura
-h1 = -15000 #Profundidad del cilindro de 16 km
+h1 = -16000 #Profundidad del cilindro de 16 km
 x01=float(x_pozo_inv_kale)
 y01=float(y_pozo_inv_kale)
 
 r2 = (2*h_pozo_inv_kale_m+20000)/(111.1*1000) #Radio externo es  2*h (profundidad del pozo) + 20 km
 a2 = 0 #Altura
-h2 = -15000 #Profundidad del cilindro de 16 km
+h2 = -16000 #Profundidad del cilindro de 16 km
 x02=float(x_pozo_inv_kale)
 y02=float(y_pozo_inv_kale)
+
+r3 = (50000)/(111.1*1000) #Radio externo es  2*h (profundidad del pozo) + 20 km
+a3 = 0 #Altura
+h3 = -32000 #Profundidad del cilindro de 16 km
+x03=float(x_pozo_inv_kale)
+y03=float(y_pozo_inv_kale)
 
 #Efectuamos los calculos correspondientes  a la funcion
 x1, y1, z1 = cylinder(r1, h1,x01,y01, a=a1)
 x2, y2, z2 = cylinder(r2, h2,x02,y02, a=a2)
+x3, y3, z3 = cylinder(r3, h3,x03,y03, a=a3)
 
-#Elaboramos la proyeccion para el cilindro interno
+#Elaboramos la proyeccion para el volumen de suspension
 cyl1 = go.Surface(x=x1, y=y1, z=z1,
                  colorscale = [[0, 'red'],[1, 'red']],#El color se da porque aqui es donde se analizan los sismos 
                                                             #que pueden dar un alarma verde,amarilla o naranja
@@ -127,7 +134,7 @@ bcircles1 =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
                         opacity =0.55, showlegend=False,
                         name='Volumen monitoreo estado rojo')
 
-#Elaboramos la proyeccion para el cilindro externo   
+#Elaboramos la proyeccion para el volumen de monitoreo
 cyl2 = go.Surface(x=x2, y=y2, z=z2,
                  colorscale = [[0, 'green'],[1, 'orange']],
                  showscale=False,
@@ -145,6 +152,26 @@ bcircles2 =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
                         line = dict(color='green', width=2),
                         opacity =0.75, showlegend=False,
                         name='Volumen monitoreo para estado verde,amarillo y naranja'
+                        )
+
+#Elaboramos la proyeccion para el cilindro de volumen externo
+cyl3 = go.Surface(x=x3, y=y3, z=z3,
+                 colorscale = [[0, 'aqua'],[1, 'aqua']],
+                 showscale=False,
+                 opacity=0.4,
+                 name='Volumen externo')
+
+xb_low, yb_low, zb_low = boundary_circle(r3, a3,x03,y03)
+xb_up, yb_up, zb_up = boundary_circle(r3,a3+h3,x03,y03)
+
+#Bordes
+bcircles3 =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
+                        y = yb_low.tolist()+[None]+yb_up.tolist(),
+                        z = zb_low.tolist()+[None]+zb_up.tolist(),
+                        mode ='lines',
+                        line = dict(color='blue', width=2),
+                        opacity =0.75, showlegend=False,
+                        name='Volumen externo'
                         )
 
 #Estaciones sismologicas
@@ -360,7 +387,7 @@ card_main=dbc.Card(
                 min=1,
                 max=10,
                 step=1,
-                value=5,
+                value=2,
                 tooltip={"placement": "bottom", "always_visible": True}),
             html.H4("Magnitudes:", className="card-subtitle"),
                     dcc.RangeSlider(
@@ -589,7 +616,7 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 colorscale='Jet',   # choose a colorscale
                 opacity=0.8,
                 cmax=df_sismos['PROF. (m)'].max(),
-                cmin=-15000,
+                cmin=-32000,
             ),
             error_x=dict(
                 array=df_sismos_1['ERROR LONGITUD (°)'],                # set color to an array/list of desired values
@@ -624,7 +651,7 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 fig.add_trace(go.Scatter3d(z=riv['Z'], x=riv['X'], y=riv['Y'],mode='markers',
                 name=str(i),marker_symbol='square',marker=dict(color='aqua',size=3)))
         if np.isin('SEM', CART):
-            fig.add_traces(data=[cyl1, bcircles1,cyl2, bcircles2])
+            fig.add_traces(data=[cyl1, bcircles1,cyl2, bcircles2,cyl3,bcircles3])
         if np.isin('STA', CART):
             fig.add_trace(STA_VMM)
             fig.add_trace(STA_LOM)
@@ -705,10 +732,10 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                         width=850, height=850,
                         margin=dict(l=50, r=50, b=50, t=50),)
         fig.update_layout(
-        scene = dict(aspectratio=dict(x=1,y=1.785714286,z=(25000/155540)*EXG),
+        scene = dict(aspectratio=dict(x=1,y=1.785714286,z=(42000/155540)*EXG),
                 xaxis = dict(title='Longitud(°)',nticks=10, range=[loi,los]),
                 yaxis = dict(title='Latitud(°)',nticks=10, range=[lai,las],),
-                zaxis = dict(title='Elevación(msnm)',nticks=10, range=[-15000,10000],),),)
+                zaxis = dict(title='Elevación(msnm)',nticks=10, range=[-32000,10000],),),)
         fig.update_traces(showlegend=False)
         return fig,START_DATE
 
@@ -752,7 +779,7 @@ def update_profile(START_DATE,END_DATE,MAGN,DEPTH,SEISMO,x0,x1,y0,y1):
                                             colorscale='Jet',   # choose a colorscale
                                             opacity=0.8,
                                             cmax=100,
-                                            cmin=-15000,),
+                                            cmin=-32000,),
                                             hovertemplate=text1)
     seismic_scale=go.Scatter(x=[dist_max/25,dist_max*1.2/25,dist_max*1.5/25,dist_max*2/25,dist_max*2.6/25],
                                 y=[8000]*5,
@@ -780,7 +807,7 @@ def update_profile(START_DATE,END_DATE,MAGN,DEPTH,SEISMO,x0,x1,y0,y1):
         scale_num=10;scale_text='10';scale_size=12
     else :
         scale_num=5;scale_text='5';scale_size=12
-    fig2.add_annotation(x=(scale_num/111.1)/2, y=-24000,
+    fig2.add_annotation(x=(scale_num/111.1)/2, y=-38000,
                 text=scale_text+'km',
                 showarrow=False,
                 yshift=0,
@@ -789,27 +816,27 @@ def update_profile(START_DATE,END_DATE,MAGN,DEPTH,SEISMO,x0,x1,y0,y1):
                 size=scale_size,
                 
                 ))
-    fig2.add_trace(go.Scatter(x=np.linspace(0, scale_num/111.1, 4), y=np.array([-25000]*4),
+    fig2.add_trace(go.Scatter(x=np.linspace(0, scale_num/111.1, 4), y=np.array([-40000]*4),
                 mode='lines',
                 name=scale_text+'km',
                 showlegend=False,
                 marker=dict(color='black', size=8)))
-    fig2.add_trace(go.Scatter(x=np.linspace(scale_num/111.1, scale_num*2/111.1, 4), y=np.array([-25000]*4),
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num/111.1, scale_num*2/111.1, 4), y=np.array([-40000]*4),
                 mode='lines',
                 name=scale_text+'km',
                 showlegend=False,
                 marker=dict(color='white', size=8)))
-    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*2/111.1, scale_num*3/111.1, 4), y=np.array([-25000]*4),
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*2/111.1, scale_num*3/111.1, 4), y=np.array([-40000]*4),
                 mode='lines',
                 name=scale_text+'km',
                 showlegend=False,
                 marker=dict(color='black', size=8)))
-    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*3/111.1, scale_num*4/111.1, 4), y=np.array([-25000]*4),
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*3/111.1, scale_num*4/111.1, 4), y=np.array([-40000]*4),
                 mode='lines',
                 name=scale_text+'km',
                 showlegend=False,
                 marker=dict(color='white', size=8)))
-    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*4/111.1, scale_num*5/111.1, 4), y=np.array([-25000]*4),
+    fig2.add_trace(go.Scatter(x=np.linspace(scale_num*4/111.1, scale_num*5/111.1, 4), y=np.array([-40000]*4),
                 mode='lines',
                 name=scale_text+'km',
                 showlegend=False,

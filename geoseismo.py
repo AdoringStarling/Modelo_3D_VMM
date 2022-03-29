@@ -257,25 +257,28 @@ def orientation(x0,y0,x1,y1):
 
 def text_scatter(SEISMO,df_sismos_1):
         ls_txt=[]
-        if np.isin('LOC', SEISMO):
-            ls_txt.append('Longitud:'+df_sismos_1['LONGITUD (°)'].apply(lambda x:str(x))+'°'+'<br>'
-                            'Latitud:'+df_sismos_1['LATITUD (°)'].apply(lambda x:str(x))+'°'+'<br>'+
-                            'Profundidad :'+df_sismos_1['PROF. (m)'].apply(lambda x:str(x))+'m <br>')
-        if np.isin('MAG', SEISMO):
-            ls_txt.append('Fecha :'+df_sismos_1['FECHA - HORA UTC'].apply(lambda x:str(x))+'<br>')
-        if np.isin('FEC', SEISMO):
-            ls_txt.append('Magnitud:'+df_sismos_1['MAGNITUD'].apply(lambda x:str(x))+'<br>'+
-            'Tipo de magnitud:'+df_sismos_1['TIPO MAGNITUD']+'<br>')
-        if np.isin('RMS', SEISMO):
-            ls_txt.append('RMS (Segundos):'+df_sismos_1['RMS (Seg)'].apply(lambda x:str(x))+'s <br>')
-        if np.isin('ERR', SEISMO):
-            ls_txt.append('Error en la latitud (m):'+df_sismos_1['ERROR LATITUD (Km)'].apply(lambda x:str(x*1000))+'m <br>'+
-            'Error en la longitud (m):'+df_sismos_1['ERROR LONGITUD (Km)'].apply(lambda x:str(x*1000))+'m <br>'+
-            'Error en la profundidad (m):'+df_sismos_1['ERROR PROFUNDIDAD (Km)'].apply(lambda x:str(x*1000))+'m <br>')
-        if len(ls_txt)==0:
-            text=' '
-        else:
-            text=''
-            for i in ls_txt:
-                text=text+i
+        try:
+            if np.isin('LOC', SEISMO):
+                ls_txt.append('Longitud:'+df_sismos_1['LONGITUD (°)'].apply(lambda x:str(x))+'°'+'<br>'
+                                'Latitud:'+df_sismos_1['LATITUD (°)'].apply(lambda x:str(x))+'°'+'<br>'+
+                                'Profundidad :'+df_sismos_1['PROF. (m)'].apply(lambda x:str(x))+'m <br>')
+            if np.isin('MAG', SEISMO):
+                ls_txt.append('Fecha :'+df_sismos_1['FECHA - HORA UTC'].apply(lambda x:str(x))+'<br>')
+            if np.isin('FEC', SEISMO):
+                ls_txt.append('Magnitud:'+df_sismos_1['MAGNITUD'].apply(lambda x:str(x))+'<br>'+
+                'Tipo de magnitud:'+df_sismos_1['TIPO MAGNITUD']+'<br>')
+            if np.isin('RMS', SEISMO):
+                ls_txt.append('RMS (Segundos):'+df_sismos_1['RMS (Seg)'].apply(lambda x:str(x))+'s <br>')
+            if np.isin('ERR', SEISMO):
+                ls_txt.append('Error en la latitud (m):'+df_sismos_1['ERROR LATITUD (Km)'].apply(lambda x:str(x*1000))+'m <br>'+
+                'Error en la longitud (m):'+df_sismos_1['ERROR LONGITUD (Km)'].apply(lambda x:str(x*1000))+'m <br>'+
+                'Error en la profundidad (m):'+df_sismos_1['ERROR PROFUNDIDAD (Km)'].apply(lambda x:str(x*1000))+'m <br>')
+            if len(ls_txt)==0:
+                text=' '
+            else:
+                text=''
+                for i in ls_txt:
+                    text=text+i
+        except:
+            text='No hay sismos'
         return text
