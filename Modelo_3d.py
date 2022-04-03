@@ -79,13 +79,13 @@ kale= go.Scatter3d(
     mode='markers',
     marker_symbol='diamond',
     name="PPII Kalé",
-    hovertemplate ='PPII Kalé Investigación',
+    hovertemplate ='PPII Kalé',
     marker=dict(
         size=10,
         color='gold'
     )
 )
-#Semaforo sismico
+#Semaforo sismico Kale
 pozo_inv_kale = df_kale[df_kale['Tipo']=='Investigación']
 x_pozo_inv_kale, y_pozo_inv_kale  = pozo_inv_kale['Longitud'].values[0], pozo_inv_kale['Latitud'].values[0]
 h_pozo_inv_kale = 3.902 #km
@@ -174,6 +174,107 @@ bcircles3 =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
                         name='Volumen externo'
                         )
 
+#Platero
+platero= go.Scatter3d(
+    x=np.array(-73.8938980),
+    y=np.array(7.2572498),
+    z=np.array(69+100),
+    mode='markers',
+    marker_symbol='diamond',
+    name="PPII Platero",
+    hovertemplate ='PPII Platero',
+    marker=dict(
+        size=10,
+        color='gold'
+    )
+)
+#Semaforo sismico Platero
+x_pozo_inv_plat, y_pozo_inv_plat  = -73.8938980,7.2572498
+h_pozo_inv_plat_m = 3227.8 #m
+r_ext_plat = 2*h_pozo_inv_plat_m+20000 #m
+
+#Asignamos las dimensiones y ubicacion del cilindro interno y externo respectivamente
+r1 = 2*h_pozo_inv_plat_m /(111.1*1000) #Radio interno es dos veces la profundidad medida del pozo. De acuerdo con Resolución 40185 del 2020 del MME. Profundidad aproximada en pozo de investigación es 3902 m
+a1 = 0 #Altura
+h1 = -16000 #Profundidad del cilindro de 16 km
+x01=float(x_pozo_inv_plat)
+y01=float(y_pozo_inv_plat)
+
+r2 = (2*h_pozo_inv_plat_m+20000)/(111.1*1000) #Radio externo es  2*h (profundidad del pozo) + 20 km
+a2 = 0 #Altura
+h2 = -16000 #Profundidad del cilindro de 16 km
+x02=float(x_pozo_inv_plat)
+y02=float(y_pozo_inv_plat)
+
+r3 = (50000)/(111.1*1000) #Radio externo es  2*h (profundidad del pozo) + 20 km
+a3 = 0 #Altura
+h3 = -32000 #Profundidad del cilindro de 16 km
+x03=float(x_pozo_inv_plat)
+y03=float(y_pozo_inv_plat)
+
+#Efectuamos los calculos correspondientes  a la funcion
+x1, y1, z1 = cylinder(r1, h1,x01,y01, a=a1)
+x2, y2, z2 = cylinder(r2, h2,x02,y02, a=a2)
+x3, y3, z3 = cylinder(r3, h3,x03,y03, a=a3)
+
+#Elaboramos la proyeccion para el volumen de suspension
+cyl1p = go.Surface(x=x1, y=y1, z=z1,
+                 colorscale = [[0, 'red'],[1, 'red']],#El color se da porque aqui es donde se analizan los sismos 
+                                                            #que pueden dar un alarma verde,amarilla o naranja
+                 showscale=False,
+                 opacity=0.5,
+                 name='Volumen monitoreo estado rojo')
+xb_low, yb_low, zb_low = boundary_circle(r1, a1,x01,y01)
+xb_up, yb_up, zb_up = boundary_circle(r1, a1+h1,x01,y01)
+
+bcircles1p =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
+                        y = yb_low.tolist()+[None]+yb_up.tolist(),
+                        z = zb_low.tolist()+[None]+zb_up.tolist(),
+                        mode ='lines',
+                        line = dict(color='red', width=2),
+                        opacity =0.55, showlegend=False,
+                        name='Volumen monitoreo estado rojo')
+
+#Elaboramos la proyeccion para el volumen de monitoreo
+cyl2p = go.Surface(x=x2, y=y2, z=z2,
+                 colorscale = [[0, 'green'],[1, 'orange']],
+                 showscale=False,
+                 opacity=0.7,
+                 name='Volumen monitoreo para estado verde,amarillo y naranja')
+
+xb_low, yb_low, zb_low = boundary_circle(r2, a2,x02,y02)
+xb_up, yb_up, zb_up = boundary_circle(r2,a2+h2,x02,y02)
+
+#Bordes
+bcircles2p =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
+                        y = yb_low.tolist()+[None]+yb_up.tolist(),
+                        z = zb_low.tolist()+[None]+zb_up.tolist(),
+                        mode ='lines',
+                        line = dict(color='green', width=2),
+                        opacity =0.75, showlegend=False,
+                        name='Volumen monitoreo para estado verde,amarillo y naranja'
+                        )
+
+#Elaboramos la proyeccion para el cilindro de volumen externo
+cyl3p = go.Surface(x=x3, y=y3, z=z3,
+                 colorscale = [[0, 'aqua'],[1, 'aqua']],
+                 showscale=False,
+                 opacity=0.4,
+                 name='Volumen externo')
+
+xb_low, yb_low, zb_low = boundary_circle(r3, a3,x03,y03)
+xb_up, yb_up, zb_up = boundary_circle(r3,a3+h3,x03,y03)
+
+#Bordes
+bcircles3p =go.Scatter3d(x = xb_low.tolist()+[None]+xb_up.tolist(),
+                        y = yb_low.tolist()+[None]+yb_up.tolist(),
+                        z = zb_low.tolist()+[None]+zb_up.tolist(),
+                        mode ='lines',
+                        line = dict(color='blue', width=2),
+                        opacity =0.75, showlegend=False,
+                        name='Volumen externo'
+                        )
+
 #Estaciones sismologicas
 df_sta_vmm=pd.read_csv('datasets/VMM_STA.csv',delimiter=';',decimal=',')
 df_sta_lom=pd.read_csv('datasets//LOMA_STA.csv',delimiter=';',decimal=',')
@@ -199,7 +300,6 @@ STA_VMM = go.Scatter3d(
         color='blueviolet'
     )
 )
-
 STA_LOM = go.Scatter3d(
     x=df_sta_lom['LONGITUD'],
     y=df_sta_lom['LATITUD'],
@@ -453,7 +553,9 @@ card_main=dbc.Card(
                         style={'color': 'black'},
                         options=[
                             {'label': ' Pozo Kalé (ANH)', 'value': 'KALE'},
-                            {'label': ' Cilindro en suspensión Semáforo sísmico (SGC)', 'value': 'SEM'},
+                            {'label': ' Cilindro en suspensión Semáforo sísmico para Kalé (SGC)', 'value': 'SEM_KALE'},
+                            {'label': ' Pozo Platero (ANH)', 'value': 'PLATERO'},
+                            {'label': ' Cilindro en suspensión Semáforo sísmico para Platero (SGC)', 'value': 'SEM_PLATERO'},
                             {'label': ' Barras de Error (SGC)', 'value': 'ERROR'},
                             {'label': ' Estaciones sismológicas (SGC)', 'value': 'STA'},
                             {'label': ' Poblaciones (UNAL-ANH-MINCIENCIAS)', 'value': 'POB'},
@@ -650,8 +752,12 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 riv=df_rivers[df_rivers['DRENAJE']==i]
                 fig.add_trace(go.Scatter3d(z=riv['Z'], x=riv['X'], y=riv['Y'],mode='markers',
                 name=str(i),marker_symbol='square',marker=dict(color='aqua',size=3)))
-        if np.isin('SEM', CART):
+        if np.isin('SEM_KALE', CART):
             fig.add_traces(data=[cyl1, bcircles1,cyl2, bcircles2,cyl3,bcircles3])
+        if np.isin('PLATERO', CART):
+            fig.add_trace(platero)
+        if np.isin('SEM_PLATERO', CART):
+            fig.add_traces(data=[cyl1p, bcircles1p,cyl2p, bcircles2p,cyl3p,bcircles3p])
         if np.isin('STA', CART):
             fig.add_trace(STA_VMM)
             fig.add_trace(STA_LOM)
