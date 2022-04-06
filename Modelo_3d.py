@@ -8,21 +8,21 @@ import numpy as np
 import os
 from geoseismo import *
 #Area del estudio
-los=-73
-loi=-74.4
-lai=6.5
-las=9
+los=-72.72
+loi=-75.41
+lai=4.15
+las=10.39
 
 #Se cargan los datos de elevacion estos fueron descargados en https://portal.opentopography.org/datasets
 # Global Bathymetry and Topography at 15 Arc Sec: SRTM15+ V2.1  
-df_topo   =pd.read_csv('datasets/topo_src_15.xyz',delim_whitespace=True,header=None,decimal='.')
+df_topo   =pd.read_csv('datasets\dem_srtm15arcs_area_LBG.xyz',delimiter=',',header=None,decimal='.')
 df_topo   =df_topo[(df_topo[1]>lai)&(df_topo[1]<las)&(df_topo[0]>loi)&(df_topo[0]<los)] #Filtros previos
 mesh_topo = (df_topo.pivot(index=1, columns=0,values=2))
 z_topo,x_topo,y_topo=mesh_topo.values,mesh_topo.columns,mesh_topo.index
 
 #Base de datos de sismos convertidos a csv desde http://bdrsnc.sgc.gov.co/paginas1/catalogo/Consulta_Valle_Medio/valle_medio.php
 #df_sismos=pd.read_csv("datasets/reporte_1.csv")#,delimiter=';',decimal=',')
-df_sismos=pd.read_csv(r'datasets\reporte_LBG_2.csv')
+df_sismos=pd.read_csv(r'datasets\reporte_LBG.csv')
 df_sismos['FECHA - HORA UTC']=df_sismos['Fecha  (UTC)'].astype(str)+' '+df_sismos['Hora  (UTC)'].astype(str)
 df_sismos.rename(columns = {'Latitud(°)':'LATITUD (°)', 
                                 'Longitud(°)':'LONGITUD (°)',
@@ -484,10 +484,10 @@ card_main=dbc.Card(
             html.H4("Exageración vertical:", className="card-subtitle"),
             dcc.Slider(
                 id='EXG',
-                min=1,
-                max=10,
-                step=1,
-                value=2,
+                min=10,
+                max=100,
+                step=10,
+                value=30,
                 tooltip={"placement": "bottom", "always_visible": True}),
             html.H4("Magnitudes:", className="card-subtitle"),
                     dcc.RangeSlider(
@@ -838,7 +838,7 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                         width=850, height=850,
                         margin=dict(l=50, r=50, b=50, t=50),)
         fig.update_layout(
-        scene = dict(aspectratio=dict(x=1,y=1.785714286,z=(42000/155540)*EXG),
+        scene = dict(aspectratio=dict(x=2.69,y=6.24,z=(42000/693264)*EXG),
                 xaxis = dict(title='Longitud(°)',nticks=10, range=[loi,los]),
                 yaxis = dict(title='Latitud(°)',nticks=10, range=[lai,las],),
                 zaxis = dict(title='Elevación(msnm)',nticks=10, range=[-32000,10000],),),)
