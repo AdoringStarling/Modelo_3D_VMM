@@ -339,7 +339,7 @@ STA_LOM = go.Scatter3d(
 )
 
 #Rios
-df_rivers=pd.read_csv('datasets\drenajes.csv')
+df_rivers=pd.read_csv('datasets\drenajes_dem15arcs_WGS84_LBG.csv')
 
 #Cargar datos de pozos
 df_pozos=pd.read_csv('datasets/pozos.csv',usecols=['lon', 'lat', 'UWI', 'WELL_NAME', 
@@ -428,16 +428,19 @@ for name,lon,lat,alt in zip(df_poblaciones['Name'],df_poblaciones['Longitud'],df
     Pobl.append(un)
 
 #Carreteras
-roads=pd.read_csv('datasets\Via_WGS84.txt',delimiter=';',decimal=',')
-roads  =roads[(roads['LATITUD']>lai)&(roads['LATITUD']<las)&(roads['LONGITUD']>loi)&(roads['LONGITUD']<los)]
+# roads=pd.read_csv('datasets\Via_WGS84.txt',delimiter=';',decimal=',')
+# roads  =roads[(roads['LATITUD']>lai)&(roads['LATITUD']<las)&(roads['LONGITUD']>loi)&(roads['LONGITUD']<los)]
+viass=pd.read_csv('datasets\Vias_carreteras.csv')
 
 # ls_x,ls_y,ls_z=lin_list('datasets/fallas.csv') #Fallas
-fallas=pd.read_csv('datasets/fallas.csv',decimal=',')
-fallas['X']=fallas['X'].apply(lambda x:float(x))
-fallas['Y']=fallas['Y'].apply(lambda x:float(x))
-fallas['Z']=fallas['Z'].apply(lambda x:float(x))
-fallas_1=pd.read_csv('datasets/fallas_1.csv')
-fallas_1=fallas_1.drop_duplicates(subset=['LINE_ID'])
+# fallas=pd.read_csv('datasets/fallas.csv',decimal=',')
+# fallas['X']=fallas['X'].apply(lambda x:float(x))
+# fallas['Y']=fallas['Y'].apply(lambda x:float(x))
+# fallas['Z']=fallas['Z'].apply(lambda x:float(x))
+# fallas_1=pd.read_csv('datasets/fallas_1.csv')
+# fallas_1=fallas_1.drop_duplicates(subset=['LINE_ID'])
+faults=pd.read_csv('datasets\Fallas_geologicas.csv')
+faults=faults.drop('Unnamed: 0',axis=1)
 
 # ls_x_f,ls_y_f,ls_z_f=lin_list('datasets/campos.csv') #Campos
 campet=pd.read_csv('datasets\campos.csv',decimal=',')
@@ -730,7 +733,7 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
         fig.add_trace(go.Scatter3d(
             x=df_sismos_1['LONGITUD (°)'],y=df_sismos_1['LATITUD (°)'],z=df_sismos_1['PROF. (m)'],mode='markers',
             marker=dict(
-                size=(df_sismos_1['MAGNITUD'])**2,
+                size=(df_sismos_1['MAGNITUD'])*3,
                 color=df_sismos_1['PROF. (m)'],                # set color to an array/list of desired values
                 colorscale='Jet',   # choose a colorscale
                 opacity=0.8,
@@ -779,10 +782,12 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
             fig.add_trace(STA_VMM)
             fig.add_trace(STA_LOM)
         if np.isin('VIA', CART):
-            for i in roads['GLOBALID'].unique():
-                f=roads[roads['GLOBALID']==i]
-                fig.add_trace(go.Scatter3d(x=f['LONGITUD'], y=f['LATITUD'], z=f['ELEVACION'],
-                hovertemplate=str(i),mode='lines',name='Via',line=dict(color='yellow',width=2),showlegend=False),)
+            for i in viass['LINE_ID'].unique():
+                via=viass[viass['LINE_ID']==i]
+                fig.add_trace(go.Scatter3d(x=via['X'], y=via['Y'], z=via['Z'],
+                                            hovertemplate=via['GLOBALID'],
+                                            mode='lines',
+                                            name='Vias y carreteras',line=dict(color='yellow',width=4),showlegend=False),)
         if np.isin('POZO', PETRO):
             fig.add_trace(Pozos)
         if np.isin('INY', PETRO):
@@ -824,21 +829,12 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                                 mode='lines',
                                 name=tip,line=dict(color='blue',width=3),showlegend=False),)
         if np.isin('FALL', GEOL):
-            for i in fallas['LINE_ID'].unique():
-                f=fallas[fallas['LINE_ID']==i]
-                attr=fallas_1[fallas_1['LINE_ID']==i]
-                try:
-                    nom=np.array(attr['NombreFall'])[0]
-                except:
-                    nom='_'
-                try:
-                    tip=np.array(attr['Tipo'])[0]
-                except:
-                    tip='_'
-                fig.add_trace(go.Scatter3d(x=f['X'], y=f['Y'], z=f['Z'],
-                                hovertemplate=nom,
-                                mode='lines',
-                                name=tip,line=dict(color='red',width=4),showlegend=False),)
+            for i in faults['LINE_ID'].unique():
+                fall=faults[faults['LINE_ID']==i]
+                fig.add_trace(go.Scatter3d(x=fall['X'], y=fall['Y'], z=fall['Z'],
+                                            hovertemplate=fall['NombreFall'],
+                                            mode='lines',
+                                            name='Fallas geologicas',line=dict(color='red',width=4),showlegend=False),)
         if np.isin('REAL', GEOL):
                 fig.add_trace(Real)
         if np.isin('COL', GEOL):
