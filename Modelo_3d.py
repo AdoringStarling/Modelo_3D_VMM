@@ -92,6 +92,22 @@ h_pozo_inv_kale = 3.902 #km
 h_pozo_inv_kale_m = h_pozo_inv_kale*1000 #m
 r_ext = 2*h_pozo_inv_kale_m+20000 #m
 
+#Inyeccíon
+iny=pd.read_csv(r'datasets\INYECCION_geo.csv',delimiter=';',decimal=',')
+iny=iny[:-1]
+INYECCION=go.Scatter3d(z=[-1000 for i in iny['X']], x=iny['X'], y=iny['Y'],mode='markers',marker_symbol='diamond',
+                    name='Inyección BBL', marker=dict(
+                size=(iny['TOTAL_bbl'])/10000000,
+                color=(iny['TOTAL_bbl'])/1000000,                # set color to an array/list of desired values
+                colorscale='viridis',   # choose a colorscale
+                opacity=0.8,
+                cmax=((iny['TOTAL_bbl'])/1000000).max(),
+                cmin=((iny['TOTAL_bbl'])/1000000).min()),
+                hovertemplate=iny['CAMPO'].apply(lambda x:str(x))+'<br>'
+                        +iny['POZOS'].apply(lambda x:str(x))+'<br>'
+                        +iny['TOTAL_bbl'].apply(lambda x:str(x)),
+                showlegend=False)
+
 #Asignamos las dimensiones y ubicacion del cilindro interno y externo respectivamente
 r1 = 2*h_pozo_inv_kale_m /(111.1*1000) #Radio interno es dos veces la profundidad medida del pozo. De acuerdo con Resolución 40185 del 2020 del MME. Profundidad aproximada en pozo de investigación es 3902 m
 a1 = 0 #Altura
@@ -495,7 +511,7 @@ card_main=dbc.Card(
                 min=df_sismos['MAGNITUD'].min(),
                 max=df_sismos['MAGNITUD'].max(),
                 step=0.1,
-                value=[df_sismos['MAGNITUD'].min(), df_sismos['MAGNITUD'].max()],
+                value=[3, df_sismos['MAGNITUD'].max()],
                 allowCross=False,
                 tooltip={"placement": "bottom", "always_visible": True}
             ),
@@ -574,6 +590,7 @@ card_main=dbc.Card(
                         style={'color': 'black'},
                         options=[
                             {'label': ' Pozos petrolíferos (UNAL-ANH-MINCIENCIAS)', 'value': 'POZO'},
+                             {'label': ' Inyección (ANH)', 'value': 'INY'},
                             {'label': ' Campos petrolíferos (UNAL-ANH-MINCIENCIAS)', 'value': 'FIELD'},
                             {'label': ' Trazo en superficie de líneas sísmicas (UNAL-ANH-MINCIENCIAS)', 'value': 'LIN'},
                             {'label': ' Rezumaderos (ANH)', 'value': 'REZ'},
@@ -768,6 +785,8 @@ def update_figure(TOPO,EXG,START_DATE,END_DATE,MAGN,DEPTH,SEISMO,CART,PETRO,GEOL
                 hovertemplate=str(i),mode='lines',name='Via',line=dict(color='yellow',width=2),showlegend=False),)
         if np.isin('POZO', PETRO):
             fig.add_trace(Pozos)
+        if np.isin('INY', PETRO):
+            fig.add_trace(INYECCION)
         if np.isin('REZ', PETRO):
             fig.add_trace(rez)
         if np.isin('POB', CART):
